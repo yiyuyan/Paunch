@@ -1,0 +1,14 @@
+[
+  {
+    "uuid": "fe016666-41a6-3d51-a11c-de82917818db",
+    "name": "KSmc_brigade",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "380df991-f603-344c-a090-369bad2a924a",
+    "name": "Dev",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  }
+]
