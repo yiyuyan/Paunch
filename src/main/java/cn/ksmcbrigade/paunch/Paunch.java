@@ -8,7 +8,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,6 +23,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -46,14 +47,21 @@ public class Paunch {
         CHANNEL.registerMessage(0, PickMessage.class,PickMessage::encode,PickMessage::decode,(msg,context)->{
             ServerPlayer player = context.get().getSender();
             if(player!=null){
-                if (msg.shoot() && Block.byItem(player.getOffhandItem().getItem()) != Blocks.AIR) {
+                Block block = Block.byItem(player.getOffhandItem().getItem());
+                if (msg.shoot() && match(block)) {
                     StoneProjectile projectile = new StoneProjectile(player.serverLevel(),player,player.getOffhandItem().getItem());
+                    projectile.setBLOCK(player.getOffhandItem().getItem());
                     projectile.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.01F, 4.5F, 0.0F);
                     player.serverLevel().addFreshEntity(projectile);
                     player.getOffhandItem().shrink(1);
                 }
                 else if(!msg.shoot()){
-                    player.getInventory().add(BlockItem.byBlock(player.serverLevel().getBlockState(msg.pos()).getBlock()).getDefaultInstance());
+                    Block blockS = player.serverLevel().getBlockState(msg.pos()).getBlock();
+                    if(match(blockS)){
+                        player.getInventory().add(Item.byBlock(blockS).getDefaultInstance());
+                        player.serverLevel().setBlockAndUpdate(msg.pos(),Blocks.AIR.defaultBlockState());
+                    }
+
                 }
             }
            context.get().setPacketHandled(true);
@@ -67,5 +75,16 @@ public class Paunch {
         if(event.getEntity() instanceof Player player && event.getSource().getEntity() instanceof Player player1 && player1.distanceTo(player)<=1){
             event.setAmount(event.getAmount()/2f+Config.WRESTLING_HURT.get());
         }
+    }
+
+    public static boolean match(@Nullable Block block){
+        if(block==null || block==Blocks.AIR) return false;
+        ResourceLocation location = ForgeRegistries.BLOCKS.getKey(block);
+        if(location==null) return false;
+        String locationS = location.toString().toLowerCase();
+        if(locationS.contains("stone")){
+            return !locationS.contains("slab") && !locationS.contains("brick") && !locationS.contains("stair");
+        }
+        return false;
     }
 }

@@ -1,3 +1,5 @@
 #Range: > 0
 wrestling_hurt = 8
+#Range: > 10
+hurt = 100
 
